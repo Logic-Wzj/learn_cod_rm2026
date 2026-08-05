@@ -73,6 +73,11 @@ public:
   void cleanup() override
   {
     inner_controller_->cleanup();
+    // 必须先释放内部控制器对象再释放 ClassLoader，
+    // 否则 class_loader 卸载库时对象仍在堆上（SEVERE WARNING + SIGSEGV，
+    // 组件容器模式下直接崩溃）
+    inner_controller_.reset();
+    loader_.reset();
   }
 
   void activate() override

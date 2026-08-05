@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>cod_sim</name>
+  <version>0.1.0</version>
+  <description>Loopback 仿真：用假里程计 + 静态 TF 跑通导航栈，无需雷达/底盘/相机</description>
+  <maintainer email="cod@todo.todo">COD</maintainer>
+  <license>MIT</license>
+
+  <depend>rclpy</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>tf2_ros</depend>
+
+  <exec_depend>cod_bringup</exec_depend>
+  <exec_depend>fake_vel_transform</exec_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

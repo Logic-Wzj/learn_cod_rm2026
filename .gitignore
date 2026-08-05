@@ -2,4 +2,4 @@ build/
 log/
 install/
 .vscode/
-.idea/
+.idea/.claude/
