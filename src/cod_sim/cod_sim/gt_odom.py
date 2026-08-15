@@ -25,10 +25,16 @@ class GtOdom(Node):
         self.declare_parameter('output_odom_topic', 'odometry')
         self.declare_parameter('frame_id', 'odom')
         self.declare_parameter('child_frame_id', 'gimbal_yaw')
+        # MecanumDrive2 的 odometry 从原点(0,0)积分，不反映 spawn 位姿。
+        # 需把结果平移到机器人实际出生位姿（offset_x/offset_y = spawn 坐标）
+        self.declare_parameter('offset_x', 0.0)
+        self.declare_parameter('offset_y', 0.0)
         input_topic = self.get_parameter('input_odom_topic').value
         output_topic = self.get_parameter('output_odom_topic').value
         self.frame_id = self.get_parameter('frame_id').value
         self.child_frame_id = self.get_parameter('child_frame_id').value
+        self.offset_x = self.get_parameter('offset_x').value
+        self.offset_y = self.get_parameter('offset_y').value
 
         self.odom_pub = self.create_publisher(Odometry, output_topic, 10)
         self.tf_broadcaster = TransformBroadcaster(self)
@@ -47,6 +53,9 @@ class GtOdom(Node):
         out.child_frame_id = self.child_frame_id
         out.pose = msg.pose
         out.twist = msg.twist
+        # 平移 odometry 到 spawn 位姿（MecanumDrive2 从原点积分）
+        out.pose.pose.position.x += self.offset_x
+        out.pose.pose.position.y += self.offset_y
         self.odom_pub.publish(out)
 
         # TF odom -> child
@@ -54,8 +63,8 @@ class GtOdom(Node):
         t.header.stamp = msg.header.stamp
         t.header.frame_id = self.frame_id
         t.child_frame_id = self.child_frame_id
-        p = msg.pose.pose.position
-        o = msg.pose.pose.orientation
+        p = out.pose.pose.position
+        o = out.pose.pose.orientation
         t.transform.translation.x = p.x
         t.transform.translation.y = p.y
         t.transform.translation.z = p.z

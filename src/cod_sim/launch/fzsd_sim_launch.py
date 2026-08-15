@@ -51,10 +51,11 @@ def generate_launch_description():
         default_value=os.path.join(fzsd_bringup_dir, 'map', 'simulation', 'testslam.yaml'))
     declare_use_rviz_cmd = DeclareLaunchArgument(
         'use_rviz', default_value='True')
-    # map->odom 静态 TF：gt_odom 的 odom 系 = gazebo world 系，而 world 坐标即地图坐标
-    # （出生位姿已体现在 gazebo 中），故默认全 0
-    declare_init_x_cmd = DeclareLaunchArgument('init_x', default_value='0.0')
-    declare_init_y_cmd = DeclareLaunchArgument('init_y', default_value='0.0')
+    # map->odom 静态 TF：odometry 是 gazebo world 系（机器人在 world (-5,3)）。
+    # testslam 地图只覆盖 x∈[-1.4,7.45]，(-5,3) 在图上外；把 odom 原点放到
+    # map (5,-3)，机器人即落在 map (0,0) = testslam 图内 free 区。
+    declare_init_x_cmd = DeclareLaunchArgument('init_x', default_value='5.0')
+    declare_init_y_cmd = DeclareLaunchArgument('init_y', default_value='-3.0')
     declare_init_yaw_cmd = DeclareLaunchArgument('init_yaw', default_value='0.0')
 
     world = LaunchConfiguration('world')
@@ -66,13 +67,16 @@ def generate_launch_description():
     init_y = LaunchConfiguration('init_y')
     init_yaw = LaunchConfiguration('init_yaw')
 
-    # 1. Gazebo 世界 + 哨兵机器人 + 话题桥 + 底盘控制（fzsd 的"身体"）
+    # 1. Gazebo 世界 + 哨兵机器人 + 话题桥 + 底盘控制（cod_sim 版 spawn，
+    #    修复了 create 负数位姿的 gflags 问题；fzsd 工作区保持不动）
     gazebo_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(fzsd_simulator_dir, 'launch', 'bringup_sim.launch.py')),
+            os.path.join(cod_sim_dir, 'launch', 'fzsd_gazebo_launch.py')),
     )
 
     # 2. Gazebo ground-truth 里程计 -> odometry + TF(odom->gimbal_yaw)
+    #    MecanumDrive2 的 odometry 从模型 spawn 位姿开始（create 修复后），
+    #    无需偏移，offset 保持 0
     gt_odom_cmd = Node(
         package='cod_sim',
         executable='gt_odom',
