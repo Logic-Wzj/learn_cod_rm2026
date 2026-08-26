@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="3" main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <ReactiveFallback name="MainDecision">
+      <!-- 游戏未进行：停车 -->
+      <Sequence name="IdleNotRunning">
+        <Inverter name="NotRunning">
+          <IsGameRunning/>
+        </Inverter>
+        <StopRobot cmd_vel_topic="/cmd_vel"/>
+      </Sequence>
+
+      <!-- 血量过低：回出生点 -->
+      <Sequence name="RetreatToSupply">
+        <IsHpLow threshold="0.3"/>
+        <SetRetreatGoal/>
+        <NavigateToPose goal="{goal}" server_name="/navigate_to_pose"/>
+      </Sequence>
+
+      <!-- 正常运行：巡航 -->
+      <Sequence name="Patrol">
+        <PatrolNextWaypoint waypoints="5.2,0.0; 4.3,-6.3; 9.8,-6.5; 9.9,-0.5; -0.2,-6.1; 0.2,0.3" use_spawn_pose="false"/>
+        <NavigateToPose goal="{goal}" server_name="/navigate_to_pose"/>
+      </Sequence>
+    </ReactiveFallback>
+  </BehaviorTree>
+
+  <TreeNodesModel>
+    <Condition ID="IsGameRunning">
+      <input_port name="game_status_topic"/>
+    </Condition>
+    <Condition ID="IsHpLow">
+      <input_port name="threshold"/>
+      <input_port name="robot_status_topic"/>
+    </Condition>
+    <Action ID="SetRetreatGoal">
+      <input_port name="x"/>
+      <input_port name="y"/>
+      <input_port name="frame_id"/>
+    </Action>
+    <Action ID="StopRobot">
+      <input_port name="cmd_vel_topic"/>
+    </Action>
+    <Action ID="PatrolNextWaypoint">
+      <input_port name="waypoints"/>
+      <input_port name="use_spawn_pose"/>
+      <input_port name="map_frame"/>
+      <input_port name="spawn_frame"/>
+      <input_port name="frame_id"/>
+    </Action>
+    <Action ID="NavigateToPose">
+      <input_port name="goal"/>
+      <input_port name="behavior_tree"/>
+      <input_port name="server_name"/>
+    </Action>
+  </TreeNodesModel>
+</root>

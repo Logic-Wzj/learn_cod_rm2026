@@ -12,8 +12,9 @@ import os
 import yaml
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import ExecuteProcess, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from nav2_common.launch import ReplaceString
 from xmacro.xmacro4sdf import XMLMacro4sdf
@@ -94,11 +95,15 @@ def generate_launch_description():
             parameters=[robot_config, {"robot_name": robot["name"]}],
         )
 
+        # red 的 RSP 完全发全局 TF（模型显示：base_footprint 及内部帧在全局树）；
+        # blue 保持 namespace（避免帧冲突）。nav2 定位用 gt_odom 的 odom->base_footprint
+        # （配合 gt_odom child=base_footprint，全局树为 map->odom->base_footprint->... 单一链）
+        rsp_remap = [] if robot["name"] == "red_standard_robot1" else remappings
         robot_state_publisher = Node(
             package="robot_state_publisher",
             executable="robot_state_publisher",
             namespace=robot["name"],
-            remappings=remappings,
+            remappings=rsp_remap,
             parameters=[{"use_sim_time": True, "robot_description": robot_urdf_xml}],
         )
 

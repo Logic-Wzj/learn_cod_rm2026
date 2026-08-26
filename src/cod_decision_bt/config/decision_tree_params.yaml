@@ -1,0 +1,15 @@
+/**:
+  ros__parameters:
+    # 决策树 XML 由 launch 文件用绝对路径注入
+    # bt_xml: /path/to/decision_tree.xml
+
+    # 要加载的 BT 插件库（nav2 标准 + 自定义）
+    plugin_libraries:
+    - cod_decision_bt_nodes
+    - nav2_navigate_to_pose_action_bt_node
+
+    # 决策树 tick 周期（ms）
+    bt_loop_duration_ms: 100
+    # action server 超时（ms）
+    server_timeout_ms: 1000
+    wait_for_service_timeout_ms: 1000

@@ -4,3 +4,5 @@ install/
 .vscode/
 .idea/.claude/
 .claude/
+__pycache__/
+*.pyc

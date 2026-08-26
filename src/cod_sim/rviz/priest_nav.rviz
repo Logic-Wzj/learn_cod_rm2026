@@ -84,6 +84,16 @@ Visualization Manager:
         Value: /map_cloud
       Use Fixed Frame: true
       Use rainbow: true
+    - Class: rviz_default_plugins/Path
+      Color: 0; 255; 0
+      Enabled: true
+      Name: PriestPath
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /priest_path
     - Alpha: 0.5
       Cell Size: 1
       Class: rviz_default_plugins/Grid
@@ -173,7 +183,7 @@ Visualization Manager:
             Value: /slam_toolbox/graph_visualization
           Value: false
         - Class: rviz_default_plugins/MarkerArray
-          Enabled: true
+          Enabled: false
           Name: MarkerArray
           Namespaces:
             {}
@@ -183,7 +193,7 @@ Visualization Manager:
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /trajectories
-          Value: true
+          Value: false
         - Class: rviz_default_plugins/MarkerArray
           Enabled: false
           Name: MarkerArray
@@ -216,7 +226,7 @@ Visualization Manager:
           Class: rviz_default_plugins/Path
           Color: 230; 97; 0
           Enabled: true
-          Head Diameter: 0.300000011920928961
+          Head Diameter: 0.30000001192092896
           Head Length: 0.20000000298023224
           Length: 0.30000001192092896
           Line Style: Billboards
@@ -277,7 +287,7 @@ Visualization Manager:
           Class: rviz_default_plugins/Map
           Color Scheme: costmap
           Draw Behind: false
-          Enabled: true
+          Enabled: false
           Name: Map
           Topic:
             Depth: 5
@@ -298,7 +308,7 @@ Visualization Manager:
           Class: rviz_default_plugins/Map
           Color Scheme: costmap
           Draw Behind: false
-          Enabled: true
+          Enabled: false
           Name: Map
           Topic:
             Depth: 5

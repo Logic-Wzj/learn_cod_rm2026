@@ -86,7 +86,7 @@ def generate_launch_description():
             'input_odom_topic': '/red_standard_robot1/chassis_odometry_gt',
             'output_odom_topic': 'odometry',
             'frame_id': 'odom',
-            'child_frame_id': 'gimbal_yaw',
+            'child_frame_id': 'base_footprint',  # 与 RSP 全局 TF 形成单一链，模型显示 + nav2 正常
         }],
     )
 
@@ -110,6 +110,22 @@ def generate_launch_description():
         output='screen',
         parameters=[{'use_sim_time': True, 'yaml_filename': map_yaml}],
     )
+    # 全局 robot_description 话题（cod_nav.rviz 的 RobotModel 显示模型需要）
+    urdf_global_cmd = Node(
+        package='cod_sim',
+        executable='urdf_global',
+        output='screen',
+        parameters=[{'use_sim_time': True, 'color': 'red'}],
+    )
+
+    # 转发 namespace 下的机器人 TF 到全局（补齐 map->模型 的 TF 链，rviz 才能渲染模型）
+    tf_forward_cmd = Node(
+        package='cod_sim',
+        executable='tf_forward',
+        output='screen',
+        parameters=[{'use_sim_time': True}],
+    )
+
     lifecycle_localization_cmd = Node(
         package='nav2_lifecycle_manager',
         executable='lifecycle_manager',
@@ -175,6 +191,8 @@ def generate_launch_description():
         gt_odom_cmd,
         static_tf_cmd,
         map_server_cmd,
+        urdf_global_cmd,
+        tf_forward_cmd,
         lifecycle_localization_cmd,
         nav_cmd,
         vel_forward_cmd,

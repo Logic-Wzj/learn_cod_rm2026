@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>cod_referee_simulator</name>
+  <version>0.1.0</version>
+  <description>COD 项目裁判系统模拟器：键盘控制机器人状态（血量/弹药/热量/阶段），配合行为树决策层开发调试</description>
+  <maintainer email="cod@todo.todo">COD</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>cod_referee_interfaces</depend>
+  <depend>std_msgs</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
