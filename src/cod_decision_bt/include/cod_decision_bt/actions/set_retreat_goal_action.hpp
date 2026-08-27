@@ -1,5 +1,4 @@
-// 动作节点：把出生点写到黑板 goal 上，后续交给 Nav2 导航
-// 出生点在树启动时由 decision_tree_node 缓存到黑板 spawn_pose
+// 动作节点：把补给点（XML 里的 x/y 坐标）写到黑板 goal 上，后续交给 Nav2 导航
 #ifndef COD_DECISION_BT__ACTIONS__SET_RETREAT_GOAL_ACTION_HPP_
 #define COD_DECISION_BT__ACTIONS__SET_RETREAT_GOAL_ACTION_HPP_
 
@@ -23,8 +22,8 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<double>("x", 0.0, "备用补给点 x 坐标（读不到出生点时用）"),
-      BT::InputPort<double>("y", 0.0, "备用补给点 y 坐标（读不到出生点时用）"),
+      BT::InputPort<double>("x", 0.0, "补给点 x 坐标"),
+      BT::InputPort<double>("y", 0.0, "补给点 y 坐标"),
       BT::InputPort<std::string>("frame_id", "map", "目标坐标系"),
     };
   }

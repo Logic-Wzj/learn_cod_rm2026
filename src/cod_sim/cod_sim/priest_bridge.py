@@ -6,11 +6,10 @@
 # 替代 MPPI 作为局部控制器。
 #
 # 订阅:  odometry (odom)         -> 机器人位置/速度（world 系）
-#        /goal_pose              -> rviz 2D Goal（动态目标点）
+#        /goal_pose              -> rviz 2D Goal（设目标，无目标时停车等待）
 #        livox/lidar (PointCloud2) -> 障碍（避障输入）
 # 发布:  cmd_vel                 -> 底盘速度（body 系，PRIEST 输出 world 系需旋转）
-# 参数:  target_x/target_y       -> 初始目标点
-#        v_max                   -> 速度上限（默认 0.65）
+# 参数:  v_max                   -> 速度上限
 
 import math
 import os
@@ -60,6 +59,7 @@ class PriestBridge(Node):
         self.control_frequency = self.get_parameter('control_frequency').value
         self.target_x = self.get_parameter('target_x').value
         self.target_y = self.get_parameter('target_y').value
+        self.has_target = False  # 无初始目标，等 rviz 2D Goal
 
         # 机器人状态（world/odom 系）
         self.x = 0.0
@@ -129,6 +129,7 @@ class PriestBridge(Node):
             self.target_y = msg.pose.position.y
         # 清掉旧路径：新目标路径获取失败时若沿用旧 path_odom，PRIEST 会沿旧路径走错方向
         self.path_odom = None
+        self.has_target = True
         self.get_logger().info(f'PRIEST 新目标(odom): ({self.target_x:.2f}, {self.target_y:.2f})')
         self._request_global_path(msg)
 
@@ -393,6 +394,13 @@ class PriestBridge(Node):
             except Exception as e:
                 self.get_logger().error(f'算法初始化失败: {e}')
                 self.initialized = True
+            return
+
+        # 无目标：停车等 rviz 2D Goal
+        if not self.has_target:
+            cmd = Twist()
+            cmd.linear.x = 0.0; cmd.linear.y = 0.0; cmd.angular.z = 0.0
+            self.cmd_vel_pub.publish(cmd)
             return
 
         # 到达目标：停止（避免局部轨迹到终点乱晃）

@@ -34,6 +34,7 @@ int main(int argc, char * argv[])
   printf("6: 耗弹 -20\n");
   printf("7: 加热 +40\n");
   printf("8: 重置状态\n");
+  printf("9: 回血 +100\n");
   printf("q: 退出\n");
   printf("============================\n");
 
@@ -53,6 +54,7 @@ int main(int argc, char * argv[])
       case '6': msg.data = 6; break;
       case '7': msg.data = 7; break;
       case '8': msg.data = 8; break;
+      case '9': msg.data = 9; break;
       case 'q':
         rclcpp::shutdown();
         printf("退出\n");

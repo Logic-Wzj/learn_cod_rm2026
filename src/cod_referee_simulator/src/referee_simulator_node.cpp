@@ -150,6 +150,10 @@ private:
         heat_ = 0;
         RCLCPP_INFO(this->get_logger(), "状态重置, HP:%d 弹丸:%u 热量:0", max_hp_, max_ammo_);
         break;
+      case 9:
+        remain_hp_ = std::min(max_hp_, remain_hp_ + 100);
+        RCLCPP_INFO(this->get_logger(), "回血 +100, 当前血量: %d/%d", remain_hp_, max_hp_);
+        break;
       default:
         RCLCPP_WARN(this->get_logger(), "未知指令: %d", cmd);
         break;

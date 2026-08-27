@@ -24,22 +24,14 @@ BT::NodeStatus SetRetreatGoalAction::tick()
   geometry_msgs::msg::PoseStamped goal;
   goal.header.frame_id = frame_id;
   goal.header.stamp = node_->now();
+  goal.pose.position.x = x;
+  goal.pose.position.y = y;
   goal.pose.orientation.w = 1.0;
-
-  // 优先用启动时缓存的出生点（黑板上 spawn_pose）
-  geometry_msgs::msg::PoseStamped spawn;
-  if (config().blackboard->get<geometry_msgs::msg::PoseStamped>("spawn_pose", spawn)) {
-    goal = spawn;
-  } else {
-    goal.pose.position.x = x;
-    goal.pose.position.y = y;
-  }
 
   config().blackboard->set<geometry_msgs::msg::PoseStamped>("goal", goal);
 
   RCLCPP_INFO(
-    node_->get_logger(), "[SetRetreatGoal] 回补给点 (%.2f, %.2f)",
-    goal.pose.position.x, goal.pose.position.y);
+    node_->get_logger(), "[SetRetreatGoal] 回补给点 (%.2f, %.2f)", x, y);
 
   return BT::NodeStatus::SUCCESS;
 }

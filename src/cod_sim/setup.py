@@ -12,7 +12,7 @@ setup(
         ('share/' + package_name + '/launch', ['launch/loopback_sim_launch.py',
                                                'launch/fzsd_sim_launch.py',
                                                'launch/fzsd_gazebo_launch.py',
-                                               'launch/priest_test_launch.py',
+                                               'launch/priest_launch.py',
                                                'launch/rm_decision_launch.py']),
         ('share/' + package_name + '/config', ['config/fzsd_sim_params.yaml',
                                                'config/gt_sim_params.yaml',

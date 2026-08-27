@@ -10,10 +10,10 @@
         <StopRobot cmd_vel_topic="/cmd_vel"/>
       </Sequence>
 
-      <!-- 血量过低：回出生点 -->
+      <!-- 血量过低：回补给点（硬编码坐标） -->
       <Sequence name="RetreatToSupply">
         <IsHpLow threshold="0.3"/>
-        <SetRetreatGoal/>
+        <SetRetreatGoal x="0.2" y="0.3"/>
         <NavigateToPose goal="{goal}" server_name="/navigate_to_pose"/>
       </Sequence>
 

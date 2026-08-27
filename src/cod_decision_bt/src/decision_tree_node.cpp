@@ -1,5 +1,5 @@
 // 高层决策行为树运行节点：加载决策树 XML，按周期 tick
-// 树创建失败自动重试（等 bt_navigator 就绪）；启动时缓存出生点到黑板
+// 树创建失败自动重试（等 bt_navigator 就绪）
 #include <chrono>
 #include <exception>
 #include <memory>
@@ -8,8 +8,6 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/transform_listener.h"
 
 #include "behaviortree_cpp_v3/blackboard.h"
 #include "behaviortree_cpp_v3/behavior_tree.h"
@@ -74,13 +72,6 @@ private:
       zmq_pub_ = std::make_unique<BT::PublisherZMQ>(*tree_);
       RCLCPP_INFO(get_logger(), "Groot 实时监控已开启（端口 1666）");
 
-      // 启动时缓存出生点（机器人还没动），供 SetRetreatGoal/PatrolNextWaypoint 使用
-      tf_buffer_ = std::make_unique<tf2_ros::Buffer>(get_clock());
-      tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
-      spawn_cache_timer_ = create_wall_timer(
-        std::chrono::milliseconds(500),
-        std::bind(&DecisionTreeNode::cache_spawn_pose, this));
-
       tick_timer_ = create_wall_timer(
         bt_loop_duration_,
         std::bind(&DecisionTreeNode::tick_tree, this));
@@ -110,33 +101,6 @@ private:
     }
   }
 
-  // 树启动时把机器人出生点（map 系）缓存到黑板，TF 未就绪则重试
-  void cache_spawn_pose()
-  {
-    if (spawn_cached_ || !tree_created_) {
-      return;
-    }
-
-    try {
-      auto tf = tf_buffer_->lookupTransform("map", "base_footprint", tf2::TimePointZero);
-
-      geometry_msgs::msg::PoseStamped spawn;
-      spawn.header.frame_id = "map";
-      spawn.header.stamp = now();
-      spawn.pose.position.x = tf.transform.translation.x;
-      spawn.pose.position.y = tf.transform.translation.y;
-      spawn.pose.orientation.w = 1.0;
-
-      blackboard_->set<geometry_msgs::msg::PoseStamped>("spawn_pose", spawn);
-      spawn_cached_ = true;
-      RCLCPP_INFO(
-        get_logger(), "出生点已缓存到黑板: (%.2f, %.2f)",
-        spawn.pose.position.x, spawn.pose.position.y);
-    } catch (const tf2::TransformException & e) {
-      RCLCPP_WARN(get_logger(), "出生点 TF 未就绪，0.5s 后重试: %s", e.what());
-    }
-  }
-
   std::string bt_xml_;
   std::vector<std::string> plugin_libraries_;
   std::chrono::milliseconds bt_loop_duration_{100};
@@ -147,15 +111,11 @@ private:
 
   rclcpp::TimerBase::SharedPtr init_timer_;
   rclcpp::TimerBase::SharedPtr tick_timer_;
-  rclcpp::TimerBase::SharedPtr spawn_cache_timer_;
   std::unique_ptr<nav2_behavior_tree::BehaviorTreeEngine> bt_engine_;
   std::unique_ptr<BT::Tree> tree_;
   std::unique_ptr<BT::PublisherZMQ> zmq_pub_;
 
   BT::Blackboard::Ptr blackboard_;
-  std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
-  bool spawn_cached_ = false;
 };
 
 int main(int argc, char ** argv)
