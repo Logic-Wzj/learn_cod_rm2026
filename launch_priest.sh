@@ -1,5 +1,10 @@
 #!/bin/zsh
-source /home/wzj/fzsd2025/install/setup.zsh
-source /home/wzj/cod_-rm2026_-navigation/install/setup.zsh
+# PRIEST 仿真测试
+# 用法：./launch_priest.sh
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+FZSD_DIR="${FZSD_DIR:-$HOME/fzsd2025}"
+
+source "$FZSD_DIR/install/setup.zsh"
+source "$SCRIPT_DIR/install/setup.zsh"
 
 ros2 launch cod_sim priest_launch.py

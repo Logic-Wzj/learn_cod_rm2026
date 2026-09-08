@@ -16,8 +16,12 @@ sleep 2
 
 set -e  # 环境 source 失败立即退出
 
+# 不写死 /home/xxx：cod 工作区取脚本所在目录，fzsd 用 FZSD_DIR（默认 ~/fzsd2025）
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+FZSD_DIR="${FZSD_DIR:-$HOME/fzsd2025}"
+
 source /opt/ros/humble/setup.zsh
-source ~/fzsd2025/install/setup.zsh
-source ~/cod_-rm2026_-navigation/install/setup.zsh
+source "$FZSD_DIR/install/setup.zsh"
+source "$SCRIPT_DIR/install/setup.zsh"
 
 ros2 launch cod_sim fzsd_sim_launch.py

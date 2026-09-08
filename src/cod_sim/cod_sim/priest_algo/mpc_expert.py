@@ -226,7 +226,11 @@ class batch_crowd_nav():
         index = jnp.argmin(dist)
         arc_point = arc_vec[index]
 
-        look_ahead_point_path = arc_point+v_des*self.t_fin
+        # 终点前瞻：远端 1.875m；剩余路径 < 3.75m 时用剩余的一半 → 轨迹随接近平滑缩短（更直，控制近终点弧度）
+        remaining = arc_vec[-1] - arc_point
+        look_ahead = v_des*self.t_fin*0.5
+        look_ahead = jnp.where(remaining < look_ahead*2, remaining*0.5, look_ahead)  # jit 兼容
+        look_ahead_point_path = arc_point + look_ahead
         look_ahead_point_path = jnp.clip(look_ahead_point_path, arc_vec[0], arc_vec[-1])
         index_final_path = jnp.argmin(jnp.abs(look_ahead_point_path-arc_vec)  )
 
@@ -234,7 +238,7 @@ class batch_crowd_nav():
         y_fin_path = y_waypoint[index_final_path]
         #########################################
 
-        look_ahead__path = arc_point+v_des*self.t_fin*0.5
+        look_ahead__path = arc_point + look_ahead
         look_ahead__path = jnp.clip(look_ahead__path, arc_vec[0], arc_vec[-1])
         index_mid_path = jnp.argmin(jnp.abs(look_ahead__path-arc_vec)  )
 
@@ -300,7 +304,11 @@ class batch_crowd_nav():
         index = jnp.argmin(dist)
         arc_point = arc_vec[index]
 
-        look_ahead_point_path = arc_point+v_des*self.t_fin
+        # 终点前瞻：远端 1.875m；剩余路径 < 3.75m 时用剩余的一半 → 轨迹随接近平滑缩短（更直）
+        remaining = arc_vec[-1] - arc_point
+        look_ahead = v_des*self.t_fin*0.5
+        look_ahead = jnp.where(remaining < look_ahead*2, remaining*0.5, look_ahead)  # jit 兼容
+        look_ahead_point_path = arc_point + look_ahead
         look_ahead_point_path = jnp.clip(look_ahead_point_path, arc_vec[0], arc_vec[-1])
         index_final_path = jnp.argmin(jnp.abs(look_ahead_point_path-arc_vec)  )
 
@@ -308,7 +316,7 @@ class batch_crowd_nav():
         y_fin_path = y_waypoint[index_final_path]
         #########################################
 
-        look_ahead__path = arc_point+v_des*self.t_fin*0.5
+        look_ahead__path = arc_point + look_ahead
         look_ahead__path = jnp.clip(look_ahead__path, arc_vec[0], arc_vec[-1])
         index_mid_path = jnp.argmin(jnp.abs(look_ahead__path-arc_vec)  )
 
@@ -662,7 +670,7 @@ class batch_crowd_nav():
         cost_length = jnp.linalg.norm(jnp.diff(x, axis=1), axis=1) + jnp.linalg.norm(jnp.diff(y, axis=1), axis=1)
         # 移除 clearance_cost（-min(dist_obs) 符号反了：奖励靠近障碍、惩罚远离，
         # 人群导航设计，在场地避障场景把机器人往墙里拉 → 穿障碍/卡住）
-        cost_batch = 1.0* res_norm_batch + 0.25*cost_smoothness + 3.0* cost_track + 5.0*cost_obs + 2.0*cost_length
+        cost_batch = 1.0* res_norm_batch + 0.25*cost_smoothness + 3.0* cost_track + 12.0*cost_obs + 2.0*cost_length
 
         return cost_batch
 

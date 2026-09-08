@@ -45,7 +45,7 @@ class PriestBridge(Node):
         self.declare_parameter('v_max', 2.5)
         self.declare_parameter('v_min', 0.02)
         self.declare_parameter('a_max', 3.0)  # 加速更快，短时间域内平均速度更高
-        self.declare_parameter('control_frequency', 5.0)
+        self.declare_parameter('control_frequency', 15.0)  # 单次计算 ~53ms，支持到 ~18Hz
         self.declare_parameter('cloud_topic', '/red_standard_robot1/livox/lidar')
         self.declare_parameter('obs_range', 15.0)
         self.declare_parameter('weight_track', 0.001)  # waypoint 跟踪权重（太小则横向不跟随）
@@ -264,8 +264,10 @@ class PriestBridge(Node):
         #   num_obs 60→420：用全部 lidar 障碍点
         #   maxiter_cem 13→30：CEM 更多迭代，近障碍更稳定
         #   代价函数：cost_obs 权重 1.0→5.0（mpc_expert.py 内）
+        # a_obs/b_obs：2.5 太大（投影推 2.5m 侧绕→CEM 选穿障碍）；0.5~0.7 能避但贴障碍近；
+        # 1.0 让障碍禁区更大 → 绕行弧度更大，避障更有力（只影响有障碍时，无障碍轨迹不变）
         self.prob = mpc_expert.batch_crowd_nav(
-            2.5, 2.5, v_max, v_min, a_max, 420, 1.5, 100, 110,
+            1.0, 1.0, v_max, v_min, a_max, 420, 1.5, 100, 110,
             1, 30, weight_smoothness, weight_track, 1000, v_des)
         self.get_logger().info('PriestBridge: 预热（JIT 编译，约 15s）...')
         self._compute_step(0.0, 0.0, 0.0, 0.0)
@@ -292,6 +294,7 @@ class PriestBridge(Node):
         d0 = math.hypot(dir_x, dir_y)
         dist_to_end = math.hypot(float(x_wp[-1]) - x, float(y_wp[-1]) - y)
         t_fin = 1.5  # 与 batch_crowd_nav 的 t_fin 一致
+        # 初速度按到目标距离限速（min），轨迹内建自然减速；近终点轨迹长度已缩短→保持直
         v_init = min(v_des, dist_to_end / t_fin)
         if d0 > 1e-6:
             vx0, vy0 = v_init * dir_x / d0, v_init * dir_y / d0
@@ -403,6 +406,13 @@ class PriestBridge(Node):
             self.cmd_vel_pub.publish(cmd)
             return
 
+        # 有目标但全局路径未就绪：停车等路径（避免直冲全局目标/切弯穿障碍）
+        if self.path_odom is None or len(self.path_odom) < 2:
+            cmd = Twist()
+            cmd.linear.x = 0.0; cmd.linear.y = 0.0; cmd.angular.z = 0.0
+            self.cmd_vel_pub.publish(cmd)
+            return
+
         # 到达目标：停止（避免局部轨迹到终点乱晃）
         stop_radius = self.get_parameter('stop_radius').value
         if math.hypot(self.x - self.target_x, self.y - self.target_y) < stop_radius:
@@ -434,6 +444,7 @@ class PriestBridge(Node):
         vx_w, vy_w = self._compute_step(self.x, self.y, self.vx, self.vy)
         if vx_w is None:
             return
+
         # 诊断：打印 PRIEST 输出（world 系）+ yaw + 目标
         if self.get_clock().now().nanoseconds % 3000000000 == 0:
             self.get_logger().info(

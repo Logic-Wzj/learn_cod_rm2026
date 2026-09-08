@@ -1,0 +1,644 @@
+<title>COD 导航栈代码详解</title>
+<style>
+  :root {
+    --bg: #F5F7FA; --bg-elev: #FFFFFF; --ink: #161A1F; --ink-soft: #4A5462;
+    --ink-faint: #7A8490; --accent: #1B6BDB; --accent-soft: #E7F0FC;
+    --code-bg: #EDF1F6; --border: #DCE2EA; --ok: #0E8A5F; --warn: #C05621; --danger: #B4433A;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0D1013; --bg-elev: #14181C; --ink: #E5E8EC; --ink-soft: #A6B0BC;
+      --ink-faint: #7C8793; --accent: #4C9DFF; --accent-soft: #16273F;
+      --code-bg: #171B20; --border: #262D35; --ok: #3FBF82; --warn: #E08A3C; --danger: #E0635A;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0D1013; --bg-elev: #14181C; --ink: #E5E8EC; --ink-soft: #A6B0BC;
+    --ink-faint: #7C8793; --accent: #4C9DFF; --accent-soft: #16273F;
+    --code-bg: #171B20; --border: #262D35; --ok: #3FBF82; --warn: #E08A3C; --danger: #E0635A;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, sans-serif; font-size: 15px; line-height: 1.68; }
+  .wrap { display: grid; grid-template-columns: 265px 1fr; min-height: 100vh; }
+  nav { border-right: 1px solid var(--border); background: var(--bg-elev); padding: 26px 16px;
+    position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+  nav .brand { font-weight: 700; font-size: 15px; }
+  nav .brand-sub { font-size: 12px; color: var(--ink-faint); margin-bottom: 18px; }
+  nav a { display: block; color: var(--ink-soft); text-decoration: none; font-size: 13px;
+    padding: 4px 9px; border-radius: 6px; }
+  nav a:hover { background: var(--accent-soft); color: var(--accent); }
+  nav .sec-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-faint); margin: 14px 9px 5px; }
+  nav a.file { font-family: var(--mono); font-size: 11.5px; }
+  main { padding: 36px 46px 90px; max-width: 940px; min-width: 0; }
+  @media (max-width: 860px) { .wrap { grid-template-columns: 1fr; }
+    nav { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); } }
+  h1 { font-size: 28px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .lead { font-size: 15.5px; color: var(--ink-soft); max-width: 64ch; margin-top: 6px; }
+  h2 { font-size: 21px; margin: 52px 0 4px; padding-top: 14px; border-top: 2px solid var(--border);
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  h2 .pkg-tag { font-family: var(--mono); font-size: 12px; font-weight: 400;
+    background: var(--accent-soft); color: var(--accent); padding: 2px 9px; border-radius: 20px; }
+  h3 { font-size: 16.5px; margin: 26px 0 4px; }
+  h4 { font-size: 14.5px; margin: 18px 0 4px; color: var(--ink); }
+  p { margin: 7px 0; color: var(--ink-soft); }
+  code, .mono { font-family: var(--mono); }
+  code.inline { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.87em; }
+  .file-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 10px;
+    padding: 20px 22px; margin: 16px 0; }
+  .file-card h3 { margin-top: 0; font-family: var(--mono); font-size: 14.5px; }
+  .file-card .path { font-family: var(--mono); font-size: 11.5px; color: var(--ink-faint); margin-bottom: 10px; }
+  .file-card .role { font-size: 13px; color: var(--accent); font-weight: 600; margin: 0 0 10px; }
+  .block { margin: 12px 0; }
+  .block .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-faint); margin-bottom: 4px; font-weight: 600; }
+  ul { margin: 6px 0; padding-left: 22px; } li { margin: 4px 0; }
+  ol { margin: 6px 0; padding-left: 22px; } ol li { margin: 5px 0; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 14px; font-family: var(--mono); font-size: 12px; overflow-x: auto; line-height: 1.55; margin: 10px 0; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 9px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-faint); }
+  td code, th code { font-size: 0.88em; }
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 16px 0; }
+  .flow .node { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 11px; font-size: 12px; font-family: var(--mono); }
+  .flow .node.hl { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+  .flow .arrow { color: var(--ink-faint); }
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft);
+    border-radius: 0 8px 8px 0; padding: 10px 14px; margin: 14px 0; font-size: 13.5px; }
+  .callout.warn { border-color: var(--warn); } .callout.danger { border-color: var(--danger); }
+  .param { display: grid; grid-template-columns: auto 1fr; gap: 2px 14px; margin: 7px 0; font-size: 13px; }
+  .param .name { font-family: var(--mono); color: var(--accent); white-space: nowrap; }
+  .param .desc { color: var(--ink-soft); }
+  .fn { margin: 14px 0; }
+  .fn .sig { font-family: var(--mono); font-size: 13px; background: var(--code-bg);
+    padding: 6px 10px; border-radius: 6px; display: inline-block; }
+  .fn .explain { margin: 6px 0 0; }
+</style>
+
+<div class="wrap">
+<nav>
+  <div class="brand">COD 导航栈</div>
+  <div class="brand-sub">代码详解 · 逐函数 · 2026-08</div>
+  <div class="sec-label">总览</div>
+  <a href="#overview">系统架构与数据流</a>
+  <a href="#two-links">两条链路对比</a>
+  <div class="sec-label">包 1 · 消息定义</div>
+  <a href="#referee-interfaces">cod_referee_interfaces</a>
+  <div class="sec-label">包 2 · 裁判模拟</div>
+  <a href="#referee-simulator">cod_referee_simulator</a>
+  <a class="file" href="#sim-node">referee_simulator_node</a>
+  <a class="file" href="#keyboard">referee_keyboard</a>
+  <div class="sec-label">包 3 · 决策行为树</div>
+  <a href="#decision-bt">cod_decision_bt</a>
+  <a class="file" href="#cond-game">IsGameRunning</a>
+  <a class="file" href="#cond-hp">IsHpLow</a>
+  <a class="file" href="#act-retreat">SetRetreatGoal</a>
+  <a class="file" href="#act-stop">StopRobot</a>
+  <a class="file" href="#act-patrol">PatrolNextWaypoint</a>
+  <a class="file" href="#register">register_nodes</a>
+  <a class="file" href="#runner">decision_tree_node</a>
+  <a class="file" href="#tree-xml">decision_tree.xml</a>
+  <div class="sec-label">包 4 · 仿真 / PRIEST</div>
+  <a href="#cod-sim">cod_sim</a>
+  <a class="file" href="#bridge-init">priest_bridge：初始化</a>
+  <a class="file" href="#bridge-cb">priest_bridge：回调</a>
+  <a class="file" href="#bridge-loop">priest_bridge：控制循环</a>
+  <a class="file" href="#bridge-compute">priest_bridge：计算</a>
+  <a class="file" href="#mpc-init">mpc_expert：矩阵</a>
+  <a class="file" href="#mpc-proj">mpc_expert：投影</a>
+  <a class="file" href="#mpc-cem">mpc_expert：CEM</a>
+  <a class="file" href="#mpc-cost">mpc_expert：代价</a>
+  <div class="sec-label">附录</div>
+  <a href="#tuning">调参记录</a>
+  <a href="#lessons">踩坑清单</a>
+</nav>
+
+<main>
+  <h1>COD 导航栈代码详解</h1>
+  <p class="lead">福州大学 RM 队暑期任务。本文档逐文件、逐函数说明四个包的代码：<code class="inline">cod_referee_interfaces</code>（消息）、<code class="inline">cod_referee_simulator</code>（裁判模拟+键盘）、<code class="inline">cod_decision_bt</code>（决策行为树）、<code class="inline">cod_sim</code>（PRIEST 局部规划器）。</p>
+
+  <div class="callout"><strong>先看这张图</strong>：整个系统的两条链路。键盘改状态 → 行为树决策 → 导航执行。</div>
+
+  <!-- ============ 总览 ============ -->
+  <h2 id="overview">系统架构与数据流</h2>
+  <p>四个包分三层职责：<strong>消息定义</strong>（包1）→ <strong>模拟与决策</strong>（包2、3）→ <strong>执行</strong>（包4 + Nav2）。</p>
+  <div class="flow">
+    <span class="node">referee_keyboard<br>键盘</span><span class="arrow">→ /referee/cmd</span>
+    <span class="node">referee_simulator_node<br>裁判模拟</span><span class="arrow">→ /referee/game_status<br>/referee/robot_status</span>
+    <span class="node hl">decision_tree_node<br>行为树决策</span><span class="arrow">→ NavigateToPose action</span>
+    <span class="node">bt_navigator<br>MPPI 导航</span><span class="arrow">→ /cmd_vel</span>
+    <span class="node">底盘</span>
+  </div>
+  <p>另一条 PRIEST 链路（单独测试用，不经过行为树）：</p>
+  <div class="flow">
+    <span class="node">rviz 2D Goal</span><span class="arrow">→ /goal_pose</span>
+    <span class="node hl">priest_bridge<br>PRIEST 局部规划</span><span class="arrow">→ /priest_cmd</span>
+    <span class="node">fake_vel_transform</span><span class="arrow">→</span>
+    <span class="node">底盘</span>
+  </div>
+
+  <div class="file-card">
+    <h3>话题与 action 一览</h3>
+    <table>
+      <tr><th>话题 / action</th><th>类型</th><th>谁发</th><th>谁收</th></tr>
+      <tr><td><code>/referee/cmd</code></td><td>UInt8</td><td>referee_keyboard</td><td>referee_simulator_node</td></tr>
+      <tr><td><code>/referee/game_status</code></td><td>GameStatus</td><td>referee_simulator_node</td><td>决策树 IsGameRunning</td></tr>
+      <tr><td><code>/referee/robot_status</code></td><td>RobotStatus</td><td>referee_simulator_node</td><td>决策树 IsHpLow</td></tr>
+      <tr><td><code>/goal_pose</code></td><td>PoseStamped</td><td>rviz 2D Goal</td><td>priest_bridge</td></tr>
+      <tr><td><code>/odometry</code></td><td>Odometry</td><td>gt_odom</td><td>priest_bridge / nav2</td></tr>
+      <tr><td><code>/red_standard_robot1/livox/lidar</code></td><td>PointCloud2</td><td>gpu_lidar</td><td>priest_bridge</td></tr>
+      <tr><td><code>/priest_cmd</code></td><td>Twist</td><td>priest_bridge</td><td>fake_vel_transform</td></tr>
+      <tr><td><code>/priest_path</code></td><td>Path</td><td>priest_bridge</td><td>rviz</td></tr>
+      <tr><td><code>/navigate_to_pose</code></td><td>Action</td><td>决策树</td><td>bt_navigator</td></tr>
+      <tr><td><code>/compute_path_to_pose</code></td><td>Action</td><td>priest_bridge</td><td>planner_server</td></tr>
+    </table>
+  </div>
+
+  <!-- ============ 包 1 ============ -->
+  <h2 id="referee-interfaces">包 1 · cod_referee_interfaces</h2>
+  <p>纯消息包（rosidl），三个消息定义了裁判系统数据的结构。行为树的条件节点和裁判模拟器都依赖它。</p>
+
+  <div class="file-card">
+    <h3>msg/GameStatus.msg</h3>
+    <div class="path">src/cod_referee_interfaces/msg/GameStatus.msg</div>
+    <div class="role">游戏阶段</div>
+    <pre>uint8 STAGE_PREPARATION = 0   # 准备阶段（上场前）
+uint8 STAGE_SELF_CHECK  = 1   # 自检阶段
+uint8 STAGE_RUNNING     = 2   # 比赛进行中
+uint8 STAGE_GAME_OVER   = 3   # 比赛结束
+
+uint8 stage             # 当前阶段（用上面的常量）
+int32 stage_remain_time # 本阶段剩余秒数</pre>
+    <p>消息常量 <code class="inline">STAGE_*</code> 在 C++/Python 里可以直接用：<code class="inline">cod_referee_interfaces::msg::GameStatus::STAGE_RUNNING</code>。行为树 <code class="inline">IsGameRunning</code> 判断 <code class="inline">stage == STAGE_RUNNING</code>。</p>
+  </div>
+
+  <div class="file-card">
+    <h3>msg/RobotStatus.msg</h3>
+    <div class="path">src/cod_referee_interfaces/msg/RobotStatus.msg</div>
+    <div class="role">机器人血量/弹丸/热量</div>
+    <pre>int32  remain_hp    # 当前血量
+int32  max_hp       # 血量上限
+uint16 ammo_count   # 弹丸数
+uint16 heat         # 当前枪口热量
+uint16 heat_limit   # 热量上限</pre>
+    <p><code class="inline">IsHpLow</code> 用 <code class="inline">remain_hp / max_hp</code> 算血量比例。字段留了 <code class="inline">heat/ammo</code> 供后续加"过热散热/弹药补给"分支用。</p>
+  </div>
+
+  <div class="file-card">
+    <h3>msg/Decision.msg</h3>
+    <div class="path">src/cod_referee_interfaces/msg/Decision.msg</div>
+    <div class="role">决策枚举</div>
+    <pre>uint8 IDLE=0   PATROL=1   ENGAGE=2   RETREAT=3
+uint8 CAUTIOUS=4  COOLDOWN=5  SHUTDOWN=6
+
+uint8 decision       # 决策值
+string description   # 说明文字（日志用）</pre>
+    <p>原 pb_rmsimulation 裁判系统用 <code class="inline">/decision</code> 话题传决策。现在行为树自己读状态做决策，这个消息保留备用（端口兼容）。</p>
+  </div>
+
+  <div class="file-card">
+    <h3>CMakeLists.txt</h3>
+    <div class="path">src/cod_referee_interfaces/CMakeLists.txt</div>
+    <pre>rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/GameStatus.msg" "msg/RobotStatus.msg" "msg/Decision.msg")</pre>
+    <p>生成三个消息的 C++/Python 绑定。编译顺序：别的包 <code class="inline">find_package(cod_referee_interfaces REQUIRED)</code> 之前必须先编这个包。</p>
+  </div>
+
+  <!-- ============ 包 2 ============ -->
+  <h2 id="referee-simulator">包 2 · cod_referee_simulator</h2>
+  <p>模拟 RoboMaster 裁判系统：一个节点维护游戏阶段和机器人状态，一个键盘节点改状态。行为树读这两个状态做决策。</p>
+
+  <div class="file-card" id="sim-node">
+    <h3>src/referee_simulator_node.cpp</h3>
+    <div class="path">src/cod_referee_simulator/src/referee_simulator_node.cpp</div>
+    <div class="role">裁判系统模拟器（状态机）</div>
+
+    <h4>内部状态</h4>
+    <pre>stage_          // 当前阶段（PREPARATION/SELF_CHECK/RUNNING/GAME_OVER）
+remain_hp_      // 当前血量
+ammo_count_     // 弹丸数
+heat_           // 热量
+stage_time_left_// 当前阶段剩余秒数
+max_hp_ / max_ammo_ / heat_limit_  // 上限（参数）</pre>
+
+    <h4>timer_callback() —— 每秒推进</h4>
+    <ol>
+      <li>阶段倒计时 <code class="inline">stage_time_left_--</code></li>
+      <li>按阶段流转：PREPARATION 到点 → SELF_CHECK；SELF_CHECK 到点 → RUNNING（重置血/弹/热）；RUNNING 里热量每 1s 降 5，血量归零或超时 → GAME_OVER 并退出节点</li>
+      <li>每轮 <code class="inline">publish_status()</code> 发布两个话题</li>
+    </ol>
+
+    <h4>cmd_callback() —— 键盘指令</h4>
+    <table>
+      <tr><th>指令</th><th>处理</th></tr>
+      <tr><td><code>1~4</code></td><td>切阶段（设置对应阶段和倒计时）</td></tr>
+      <tr><td><code>5</code></td><td><code class="inline">remain_hp_ = max(0, remain_hp_-100)</code></td></tr>
+      <tr><td><code>6</code></td><td><code class="inline">ammo_count_ = max(0, ammo-20)</code></td></tr>
+      <tr><td><code>7</code></td><td><code class="inline">heat_ = min(heat_limit, heat+40)</code></td></tr>
+      <tr><td><code>8</code></td><td>重置：血量满、弹满、热量 0</td></tr>
+      <tr><td><code>9</code></td><td><code class="inline">remain_hp_ = min(max_hp, remain+100)</code>（回血）</td></tr>
+    </table>
+
+    <h4>publish_status()</h4>
+    <p>把内部状态填进 <code class="inline">GameStatus</code> + <code class="inline">RobotStatus</code> 发布到 <code>/referee/game_status</code> 和 <code>/referee/robot_status</code>。</p>
+  </div>
+
+  <div class="file-card" id="keyboard">
+    <h3>src/referee_keyboard.cpp</h3>
+    <div class="path">src/cod_referee_simulator/src/referee_keyboard.cpp</div>
+    <div class="role">键盘控制</div>
+    <p><code class="inline">getch()</code> 用 <code class="inline">termios</code> 把终端设为<strong>无缓冲非回显</strong>，读单键后恢复。按键映射到 <code class="inline">UInt8</code> 发 <code>/referee/cmd</code>。launch 里用 <code class="inline">gnome-terminal</code> 打开独立终端（这台机器没装 xterm，之前因此报"没有 xterm 窗口"）。</p>
+  </div>
+
+  <div class="file-card">
+    <h3>config/referee_params.yaml + launch/referee.launch.py</h3>
+    <div class="path">src/cod_referee_simulator/</div>
+    <pre>/**:
+  ros__parameters:
+    max_hp: 500
+    max_ammo: 100
+    heat_limit: 240
+    preparation_time: 60   # 准备阶段时长
+    self_check_time: 5
+    running_time: 300</pre>
+    <p>launch 同时起模拟器 + 键盘（键盘套 <code class="inline">gnome-terminal</code>）。</p>
+  </div>
+
+  <!-- ============ 包 3 ============ -->
+  <h2 id="decision-bt">包 3 · cod_decision_bt</h2>
+  <p>nav2 风格的行为树：5 个自定义 BT 插件节点 + 一个独立跑树的节点。核心思路——<strong>决策逻辑写进 XML</strong>，条件/动作节点是纯逻辑，状态从裁判话题读，导航交给 nav2 标准节点。</p>
+
+  <div class="callout"><strong>nav2 BT 插件机制回顾</strong>：BehaviorTree.CPP 用插件库注册自定义节点。每个节点类有 <code class="inline">providedPorts()</code>（定义端口）和 <code class="inline">tick()</code>（执行逻辑）。一个库文件里用 <code class="inline">BT_REGISTER_NODES(factory){...}</code> 注册多个节点，编译时加 <code class="inline">BT_PLUGIN_EXPORT</code> 让 <code class="inline">BT_RegisterNodesFromPlugin</code> 符号导出。运行节点用 <code class="inline">BehaviorTreeEngine</code> 加载插件库 + XML。</div>
+
+  <h3 id="cond-game">条件节点 1：IsGameRunning</h3>
+  <div class="file-card">
+    <div class="path">include/cod_decision_bt/conditions/is_game_running_condition.{hpp,cpp}</div>
+    <div class="role">游戏是否 RUNNING</div>
+    <h4>构造函数</h4>
+    <p>从黑板取 <code class="inline">node</code>（rclcpp 节点句柄），订阅 <code>/referee/game_status</code>，回调里<strong>缓存</strong>最新阶段（加互斥锁保护）。构造订阅而不是 tick 里订阅，避免每 tick 重建。</p>
+    <h4>tick()</h4>
+    <pre>if (!data_received_) return FAILURE;   // 没数据 → 保守失败
+return stage == STAGE_RUNNING ? SUCCESS : FAILURE;</pre>
+    <h4>端口</h4>
+    <div class="param"><span class="name">game_status_topic</span><span class="desc">默认 /referee/game_status</span></div>
+  </div>
+
+  <h3 id="cond-hp">条件节点 2：IsHpLow</h3>
+  <div class="file-card">
+    <div class="path">include/cod_decision_bt/conditions/is_hp_low_condition.{hpp,cpp}</div>
+    <div class="role">血量比例是否低于阈值</div>
+    <h4>tick()</h4>
+    <pre>// 回调里算好 hp_ratio = remain_hp / max_hp（max_hp>0 时）
+if (!data_received_) return FAILURE;
+double threshold = 0.3;  // 从端口读
+return hp_ratio_ < threshold ? SUCCESS : FAILURE;</pre>
+    <h4>端口</h4>
+    <div class="param"><span class="name">threshold</span><span class="desc">默认 0.3（血量低于 30% 触发）</span></div>
+    <div class="param"><span class="name">robot_status_topic</span><span class="desc">默认 /referee/robot_status</span></div>
+  </div>
+
+  <h3 id="act-retreat">动作节点 1：SetRetreatGoal</h3>
+  <div class="file-card">
+    <div class="path">include/cod_decision_bt/actions/set_retreat_goal_action.{hpp,cpp}</div>
+    <div class="role">把补给点坐标写黑板 goal</div>
+    <p><code class="inline">SyncActionNode</code>（同步动作，tick 立即完成）。从 XML 的 <code class="inline">x/y</code> 端口读坐标，构造 <code class="inline">PoseStamped</code>（frame=map），写到黑板 <code class="inline">goal</code>。后续 <code class="inline">NavigateToPose</code> 读这个 goal 发给 bt_navigator。</p>
+    <div class="callout warn"><strong>为什么硬编码</strong>：之前用 TF 动态取"出生点"（树启动时缓存），但缓存时机不稳（TF 瞬态/车已跑远）反复出错。改成 XML 硬编码 <code class="inline">0.2, 0.3</code>（出生点附近）最可靠。想改补给点直接改 XML。</div>
+    <h4>端口</h4>
+    <div class="param"><span class="name">x / y</span><span class="desc">补给点坐标（当前 0.2 / 0.3）</span></div>
+    <div class="param"><span class="name">frame_id</span><span class="desc">默认 map</span></div>
+  </div>
+
+  <h3 id="act-stop">动作节点 2：StopRobot</h3>
+  <div class="file-card">
+    <div class="path">include/cod_decision_bt/actions/stop_robot_action.{hpp,cpp}</div>
+    <div class="role">原地停车</div>
+    <p>构造时创建 <code class="inline">/cmd_vel</code> 发布者；tick 发 0 速度。用于"游戏未开始 / 健康待命"分支。发 0 是保险，因为车本来就没导航指令。</p>
+    <div class="param"><span class="name">cmd_vel_topic</span><span class="desc">默认 /cmd_vel</span></div>
+  </div>
+
+  <h3 id="act-patrol">动作节点 3：PatrolNextWaypoint</h3>
+  <div class="file-card">
+    <div class="path">include/cod_decision_bt/actions/patrol_next_waypoint_action.{hpp,cpp}</div>
+    <div class="role">选下一个巡航点写黑板</div>
+    <h4>parse_waypoints()</h4>
+    <p>把 <code class="inline">"x,y; x,y; ..."</code> 分号分隔的字符串解析成坐标列表（去空白、按逗号拆分）。</p>
+    <h4>tick()</h4>
+    <pre>// 第一次时解析 waypoints
+auto [wx, wy] = waypoints_[index_];       // 取当前巡航点
+index_ = (index_ + 1) % waypoints_.size(); // 循环前进
+// 默认 use_spawn_pose=false：直接用绝对坐标
+goal.x = wx; goal.y = wy;
+写黑板 goal; return SUCCESS;</pre>
+    <p><code class="inline">use_spawn_pose=true</code> 时坐标是"相对出生点的偏移"（从黑板 <code class="inline">spawn_pose</code> 读出生点加偏移），当前 XML 用绝对坐标所以没用到。</p>
+    <div class="callout"><strong>巡航点不"跳太快"的原因</strong>：XML 里 <code class="inline">PatrolNextWaypoint</code> 后面跟着 <code class="inline">NavigateToPose</code>。Sequence 会记住正在 RUNNING 的子节点，导航期间不会重跑 PatrolNextWaypoint，到点后才取下一个。</div>
+  </div>
+
+  <h3 id="register">register_nodes.cpp</h3>
+  <div class="file-card">
+    <div class="path">src/cod_decision_bt/src/register_nodes.cpp</div>
+    <div class="role">BT 插件注册（一个库注册 5 个节点）</div>
+    <pre>BT_REGISTER_NODES(factory) {
+  factory.registerNodeType<IsGameRunningCondition>("IsGameRunning");
+  factory.registerNodeType<IsHpLowCondition>("IsHpLow");
+  factory.registerNodeType<SetRetreatGoalAction>("SetRetreatGoal");
+  factory.registerNodeType<StopRobotAction>("StopRobot");
+  factory.registerNodeType<PatrolNextWaypointAction>("PatrolNextWaypoint");
+}</pre>
+    <p>CMake 里这个库加了 <code class="inline">target_compile_definitions(cod_decision_bt_nodes PRIVATE BT_PLUGIN_EXPORT)</code>。运行时 <code class="inline">registerFromPlugin("cod_decision_bt_nodes")</code> 通过 <code class="inline">dlopen</code> 找到 <code class="inline">libcod_decision_bt_nodes.so</code> 并调用 <code class="inline">BT_RegisterNodesFromPlugin</code>。</p>
+  </div>
+
+  <h3 id="runner">decision_tree_node.cpp</h3>
+  <div class="file-card">
+    <div class="path">src/cod_decision_bt/src/decision_tree_node.cpp</div>
+    <div class="role">决策树运行节点（独立跑树，不依赖 bt_navigator 也能 tick）</div>
+    <h4>参数</h4>
+    <div class="param"><span class="name">bt_xml</span><span class="desc">决策树 XML 路径（launch 注入）</span></div>
+    <div class="param"><span class="name">plugin_libraries</span><span class="desc">要加载的插件库列表（自定义 + nav2 的 NavigateToPose）</span></div>
+    <div class="param"><span class="name">bt_loop_duration_ms</span><span class="desc">100（tick 周期）</span></div>
+    <div class="param"><span class="name">server_timeout_ms / wait_for_service_timeout_ms</span><span class="desc">action 服务超时</span></div>
+    <h4>try_create_tree() —— 初始化</h4>
+    <ol>
+      <li>创建 <code class="inline">BehaviorTreeEngine</code>，加载所有插件库（含 <code class="inline">nav2_navigate_to_pose_action_bt_node</code>）</li>
+      <li>初始化黑板，键与 bt_navigator 一致：<code class="inline">node</code>（节点句柄）、<code class="inline">bt_loop_duration</code>、<code class="inline">server_timeout</code>、<code class="inline">wait_for_service_timeout</code>、<code class="inline">goal</code>(空 PoseStamped)</li>
+      <li>从 XML 建树 → <code class="inline">BT::PublisherZMQ</code> 开 1666 端口（Groot 实时监控）→ 启动 tick timer</li>
+      <li>创建失败（如 bt_navigator 未就绪导致 NavigateToPose 的 action client 连不上）→ 0.5s 后重试</li>
+    </ol>
+    <h4>tick_tree() —— 每 100ms</h4>
+    <pre>auto status = tree_.tickRoot();   // tick 整棵树
+if (BT::StatusCompleted(status))   // 树跑完一个决策周期
+  bt_engine_->haltAllActions(root); // 复位所有节点，下一 tick 重新决策</pre>
+  </div>
+
+  <h3 id="tree-xml">behavior_trees/decision_tree.xml</h3>
+  <div class="file-card">
+    <div class="path">src/cod_decision_bt/behavior_trees/decision_tree.xml</div>
+    <div class="role">决策树本体</div>
+    <pre>&lt;ReactiveFallback name="MainDecision"&gt;
+  &lt;!-- 分支1 游戏未进行 → 停车 --&gt;
+  &lt;Sequence name="IdleNotRunning"&gt;
+    &lt;Inverter&gt;&lt;IsGameRunning/&gt;&lt;/Inverter&gt;
+    &lt;StopRobot/&gt;
+  &lt;/Sequence&gt;
+
+  &lt;!-- 分支2 血量低 → 回补给点 --&gt;
+  &lt;Sequence name="RetreatToSupply"&gt;
+    &lt;IsHpLow threshold="0.3"/&gt;
+    &lt;SetRetreatGoal x="0.2" y="0.3"/&gt;
+    &lt;NavigateToPose goal="{goal}"/&gt;
+  &lt;/Sequence&gt;
+
+  &lt;!-- 分支3 正常 → 巡航 6 点 --&gt;
+  &lt;Sequence name="Patrol"&gt;
+    &lt;PatrolNextWaypoint waypoints="5.2,0; 4.3,-6.3; 9.8,-6.5; 9.9,-0.5; -0.2,-6.1; 0.2,0.3"/&gt;
+    &lt;NavigateToPose goal="{goal}"/&gt;
+  &lt;/Sequence&gt;
+&lt;/ReactiveFallback&gt;</pre>
+    <h4>每个节点的角色</h4>
+    <table>
+      <tr><th>节点</th><th>类型</th><th>作用</th></tr>
+      <tr><td><code>MainDecision</code></td><td>ReactiveFallback</td><td>根决策器：从左到右试分支，高优先级成立就打断切换</td></tr>
+      <tr><td><code>IdleNotRunning</code> 等</td><td>Sequence</td><td>分支内动作全成功才算成功</td></tr>
+      <tr><td><code>Inverter</code></td><td>装饰器</td><td>取反：<code>IsGameRunning</code> 失败 → 成功（即"游戏没在跑"）</td></tr>
+      <tr><td><code>NavigateToPose</code></td><td>Action（nav2）</td><td>把黑板 <code>goal</code> 发给 bt_navigator 的 <code>/navigate_to_pose</code>，导航中保持 RUNNING</td></tr>
+    </table>
+    <div class="block"><div class="label">ReactiveFallback 为什么适合做决策</div>
+      <p>每个 tick 重新从左到右评估。巡航中血量掉低 → 分支2 条件成立 → 立刻打断分支3 的导航（取消 nav goal）转回补给点。优先级和互斥由树结构保证，不用写 if-else。</p>
+    </div>
+  </div>
+
+  <!-- ============ 包 4 ============ -->
+  <h2 id="cod-sim">包 4 · cod_sim（仿真 + PRIEST）</h2>
+  <p>PRIEST 是论文算法（Projection Guided Sampling，IEEE RA-L 2024），用伯恩斯坦多项式参数化轨迹，采样 + 投影到可行域 + CEM 迭代优化。这里把它接入 ROS2 当局部规划器（替代 MPPI）。</p>
+
+  <h3 id="bridge-init">priest_bridge.py · 初始化</h3>
+  <div class="file-card">
+    <div class="path">src/cod_sim/cod_sim/priest_bridge.py</div>
+    <div class="role">类 PriestBridge(Node)</div>
+    <h4>重要：XLA 显存按需分配</h4>
+    <pre>os.environ.setdefault('XLA_PYTHON_CLIENT_PREALLOCATE', 'false')</pre>
+    <p>必须在 import jax 之前设。否则 JAX 预占全部 GPU 显存，会和 gazebo 渲染竞争导致 cuSolver handle 创建失败。</p>
+    <h4>__init__ 参数</h4>
+    <table>
+      <tr><th>参数</th><th>默认</th><th>含义</th></tr>
+      <tr><td><code>odom_topic</code></td><td>odometry</td><td>里程计话题</td></tr>
+      <tr><td><code>cmd_vel_topic</code></td><td>/priest_cmd</td><td>速度输出（进 fake_vel_transform）</td></tr>
+      <tr><td><code>target_x/y</code></td><td>-2, 0</td><td>备用目标（实际等 rviz 2D Goal）</td></tr>
+      <tr><td><code>v_max / v_min / a_max</code></td><td>2.5 / 0.02 / 3.0</td><td>速度/加速度限制</td></tr>
+      <tr><td><code>control_frequency</code></td><td>15</td><td>控制频率（实际 ~12Hz）</td></tr>
+      <tr><td><code>cloud_topic</code></td><td>/red_standard_robot1/livox/lidar</td><td>点云</td></tr>
+      <tr><td><code>obs_range</code></td><td>15</td><td>障碍有效范围</td></tr>
+      <tr><td><code>weight_track</code></td><td>0.001→5.0</td><td>waypoint 跟踪权重（launch 里设 5.0）</td></tr>
+      <tr><td><code>v_des</code></td><td>2.5</td><td>目标速度（决定前瞻距离）</td></tr>
+      <tr><td><code>stop_radius</code></td><td>0.4</td><td>到目标停车距离</td></tr>
+    </table>
+    <h4>内部状态</h4>
+    <pre>x, y, yaw, vx, vy    # 机器人位姿/速度（odom 系）
+x_obs, y_obs         # 420 个障碍点（odom 系），未收到点云时全 100
+path_odom            # 全局路径（odom 系，list of (x,y)）
+has_target           # 是否收到过目标
+gimbal_yaw           # 云台偏航（底盘控制器旋转速度用）
+initialized          # 算法是否初始化（JIT 预热完成）</pre>
+  </div>
+
+  <h3 id="bridge-cb">priest_bridge.py · 回调</h3>
+  <div class="file-card">
+    <h4>odom_cb() —— 更新位姿</h4>
+    <p>从 Odometry 读 x,y,vx,vy，并从四元数算 yaw（<code class="inline">atan2</code> 公式）。</p>
+
+    <h4>goal_cb() —— rviz 2D Goal</h4>
+    <ol>
+      <li>rviz 目标是 <strong>map 系</strong>，PRIEST 用 <strong>odom 系</strong>，用 TF <code class="inline">odom→map</code> 转换（<code class="inline">target = goal + trans.translation</code>）</li>
+      <li><code class="inline">path_odom = None</code>：清旧路径（防新目标路径没到就沿用旧路径走错方向）</li>
+      <li><code class="inline">has_target = True</code></li>
+      <li>调 <code class="inline">_request_global_path()</code> 向 planner_server 请求全局路径</li>
+    </ol>
+
+    <h4>_request_global_path() → _path_goal_done() → _path_result_done()</h4>
+    <p>用 <code class="inline">ComputePathToPose</code> action 异步请求全局路径。起点用 TF 把当前位姿转到 map 系。结果回调里把路径点转回 odom 系存到 <code class="inline">path_odom</code>。</p>
+
+    <h4>js_cb() —— 读 gimbal_yaw</h4>
+    <p>从 joint_states 里找 <code class="inline">gimbal_yaw_joint</code> 的角度。</p>
+
+    <h4>_parse_cloud() —— 手动解析 PointCloud2</h4>
+    <p>不用 <code class="inline">sensor_msgs_py</code>，直接用 <code class="inline">struct.unpack_from</code> 按 field offset 解 x,y,z，省 Python 库开销。</p>
+
+    <h4>cloud_cb() —— 点云 → 障碍</h4>
+    <ol>
+      <li>TF 把点云从传感器系转 odom 系</li>
+      <li>过滤：<code class="inline">0.15 &lt; dist &lt; obs_range</code>（0.15 下限保留贴身点；雷达本身 ~0.4m 内测不到，见调参记录）</li>
+      <li>降采样到 420 个，不足补 100.0（远离标记）</li>
+      <li>存 <code class="inline">x_obs / y_obs</code></li>
+    </ol>
+  </div>
+
+  <h3 id="bridge-loop">priest_bridge.py · 控制循环</h3>
+  <div class="file-card">
+    <h4>control_loop() —— 15Hz timer</h4>
+    <ol>
+      <li><strong>算法未初始化</strong>：调 <code class="inline">_init_algorithm()</code>（JIT 编译 ~30s，期间车不动）</li>
+      <li><strong>无目标</strong>：发 0 速度停车（等 rviz 2D Goal）</li>
+      <li><strong>有目标但路径未就绪</strong>：发 0 速度（避免直冲目标切弯，等全局路径）</li>
+      <li><strong>到目标 &lt;0.4m</strong>：发 0 速度停车</li>
+      <li><strong>贴障碍 &lt;0.35m</strong>：推离最近障碍（兜底，防物理卡死）</li>
+      <li>算 PRIEST 输出 → 按 gimbal_yaw 旋转到 gimbal_fake 系 → 发布 <code>/priest_cmd</code></li>
+    </ol>
+    <div class="callout"><strong>为什么输出要旋转</strong>：MPPI 输出是 gimbal_fake 系（底盘控制器按 gimbal_yaw 旋转到底盘系后车才走对方向）。PRIEST 算的是 world/odom 系，要先转 +gimbal_yaw 到 gimbal_fake 系，再经 fake_vel_transform + chassis_controller。</div>
+  </div>
+
+  <h3 id="bridge-compute">priest_bridge.py · 计算</h3>
+  <div class="file-card">
+    <h4>_init_algorithm() —— 建算法 + JIT 预热</h4>
+    <pre>self.prob = mpc_expert.batch_crowd_nav(
+    a_obs=1.0, b_obs=1.0, v_max, v_min, a_max,
+    num_obs=420, t_fin=1.5, num=100, num_batch=110,
+    maxiter=1, maxiter_cem=30,
+    weight_smoothness, weight_track, way_point_shape=1000, v_des)
+self._compute_step(0,0,0,0)   # 触发 JIT 编译（~30s）</pre>
+    <p>关键参数：<code class="inline">a_obs/b_obs=1.0</code>（避障椭圆）、<code class="inline">t_fin=1.5</code>（时间域）、<code class="inline">maxiter_cem=30</code>（CEM 迭代）。</p>
+
+    <h4>_compute_step(x,y,vx,vy) —— 一次控制计算</h4>
+    <ol>
+      <li><strong>waypoint</strong>：有全局路径用 <code class="inline">_path_waypoints</code>，否则直线到目标</li>
+      <li><strong>初速度</strong>：<code class="inline">v_init = min(v_des, dist_to_end/t_fin)</code> 沿 waypoint 方向 → 轨迹内建自然减速</li>
+      <li><code class="inline">path_spline</code>：路径弧长参数化</li>
+      <li><code class="inline">compute_warm_traj</code>：温启动轨迹（含近终点缩短）</li>
+      <li><code class="inline">compute_obs_traj_prediction</code>：障碍轨迹预测</li>
+      <li><code class="inline">compute_traj_guess</code>：初始猜测（含投影）</li>
+      <li><code class="inline">compute_cem</code>：CEM 迭代优化（核心）</li>
+      <li><code class="inline">compute_controls</code>：从最优轨迹前 0.45s 提速度</li>
+      <li>v_max 截断 → 返回 world 系速度</li>
+    </ol>
+    <div class="callout"><strong>v_init 与弧度耦合</strong>：初速度小（靠近目标时）→ 轨迹需从低速加速 → 平滑代价高 → 偏爱弧线；初速度大 → 轨迹直。这就是"速度减慢后回到弧线状态"的原因。近终点弧度另靠"轨迹长度缩短"控制。</div>
+  </div>
+
+  <h3 id="mpc-init">mpc_expert.py · 矩阵初始化</h3>
+  <div class="file-card">
+    <div class="path">src/cod_sim/cod_sim/priest_algo/mpc_expert.py</div>
+    <div class="role">类 batch_crowd_nav</div>
+    <h4>伯恩斯坦多项式</h4>
+    <pre># 10 阶伯恩斯坦基，在 [0, t_fin] 上采 num=100 个点
+self.P, self.Pdot, self.Pddot = bernstein_coeff_order10(...)
+# 轨迹 = P @ c（c 是 11 个系数，nvar=11）
+# 位置=P c, 速度=Pdot c, 加速度=Pddot c</pre>
+    <h4>约束矩阵</h4>
+    <table>
+      <tr><th>矩阵</th><th>含义</th></tr>
+      <tr><td><code>A_eq</code></td><td>等号约束：起始位置/速度/加速度 + 终点位置（边界条件）</td></tr>
+      <tr><td><code>A_vel = Pdot</code></td><td>速度不等式约束</td></tr>
+      <tr><td><code>A_acc = Pddot</code></td><td>加速度不等式约束</td></tr>
+      <tr><td><code>A_obs = tile(P, 30)</code></td><td>障碍投影约束（30 个最近障碍）</td></tr>
+    </table>
+    <h4>投影代价矩阵</h4>
+    <pre>cost_x_projection = rho_proj·A_projᵀA_proj + rho_obs·A_obsᵀA_obs
+                   + rho_ineq·A_accᵀA_acc + rho_ineq·A_velᵀA_vel
+cost_mat_x_projection = [[cost_x_projection, A_eqᵀ],[A_eq, 0]]</pre>
+    <p>投影本质是个 <strong>带约束的最小二乘</strong>，预先求逆（<code class="inline">cost_mat_inv_x_projection</code>）在 GPU 上批量解。</p>
+    <h4>采样协方差</h4>
+    <p>用二阶差分矩阵构造轨迹的平滑先验协方差，<code class="inline">multivariate_normal</code> 采样初始轨迹。</p>
+  </div>
+
+  <h3 id="mpc-proj">mpc_expert.py · 投影（避障核心）</h3>
+  <div class="file-card">
+    <div class="role">把采样轨迹"推"到可行域</div>
+    <h4>compute_projection() —— 投影 QP</h4>
+    <pre>b_obs_x = x_obs + d_obs·cos(alpha_obs)·a_obs   # 目标：椭圆边界上的点
+lincost_x = -rho_proj·A_projᵀ·b_proj - lambda - rho_obs·A_obsᵀ·b_obs - ...
+sol = cost_mat_inv_x_projection · [-lincost, b_eq]   # 解 QP</pre>
+    <h4>initial_alpha_d() / compute_alph_d_proj() —— 交替最小化变量</h4>
+    <p>障碍用<strong>极坐标</strong>表示（<code class="inline">d_obs</code> 视线距离、<code class="inline">alpha_obs</code> 角度）：</p>
+    <pre>alpha_obs = atan2(ws·a_obs, wc·b_obs)      # 轨迹点相对障碍的角度
+d_obs = c2_d / c1_d                          # 视线距离
+d_obs = max(1, d_obs)   # ← 论文的 d≥1：轨迹必须推出椭圆外</pre>
+    <div class="callout danger"><strong>a_obs 为什么不能太大</strong>：a_obs=2.5 时投影把轨迹推到 2.5m 侧绕，CEM 权衡后放弃绕行选穿障碍 → 撞上。a_obs=1.0 既有足够绕行弧度又能避让。</div>
+    <h4>compute_projection_sampling() —— 迭代投影</h4>
+    <pre># 用 lax.scan 迭代 maxitet_proj=13 次：
+#   compute_projection（解 QP 把轨迹拉向约束）→
+#   compute_alph_d_proj（更新 alpha/d/lambda 乘子）
+# 交替最小化，轨迹逐步被推到可行域</pre>
+  </div>
+
+  <h3 id="mpc-cem">mpc_expert.py · CEM 采样优化</h3>
+  <div class="file-card">
+    <h4>compute_cem() —— 主循环（30 次迭代）</h4>
+    <pre>for i in range(maxiter_cem=30):
+  # 1. 投影所有采样轨迹到可行域
+  c_x, c_y, x, ... = compute_projection_sampling(...)
+  # 2. 按投影残差选 elite（保留 80 条）
+  # 3. 算代价（compute_cost_batch）
+  # 4. 更新采样分布（compute_shifted_samples）
+  #   均值/协方差按指数权重朝低代价轨迹靠拢</pre>
+    <h4>compute_shifted_samples() —— 更新分布</h4>
+    <pre>d = exp(-(1/lambda)·(cost - min_cost))   # 指数权重
+c_mean = (1-alpha)·old + alpha·Σ(elite·d)/Σd
+c_cov  = (1-alpha)·old + alpha·加权协方差
+# 从新分布重采样 110 条 → 按障碍代价选 elite → 作为下一轮采样</pre>
+
+    <h4>compute_controls() —— 从轨迹提速度</h4>
+    <pre># 用轨迹前 0.45s 的位移算速度（不是终点位移！）
+# 终点在障碍另一侧时"终点位移"会穿过障碍 → 避障失效
+x_best = P_up @ c_x_best          # 上采样到 100 点
+look_ahead = 30                    # 前 30/100 = 0.45s
+vx = (x_best[30] - x_best[0]) / dt # 跟随避障弯的方向</pre>
+  </div>
+
+  <h3 id="mpc-cost">mpc_expert.py · 代价函数</h3>
+  <div class="file-card">
+    <h4>compute_cost_batch()</h4>
+    <pre>dist_obs = 1 - (dx/a_obs)² - (dy/b_obs)²   # 椭圆方程：>0 表示在椭圆内
+cost_obs = ||max(0, dist_obs)||             # 轨迹点穿透椭圆的惩罚
+
+cost_smoothness = ||xddot|| + ||yddot||     # 加速度（平滑）
+cost_track      = ||x - x_project|| + ...   # 到路径的横向距离
+cost_length     = ||diff(x)|| + ||diff(y)|| # 路径长度（抑制弧线）
+
+cost_batch = 1.0·res_norm + 0.25·smooth + 3.0·track
+           + 12.0·cost_obs + 2.0·length</pre>
+    <p>各项作用：<code class="inline">res_norm</code> 投影残差（轨迹离可行域多远）；<code class="inline">smooth</code> 惩罚急加速；<code class="inline">track</code> 让轨迹贴全局路径；<code class="inline">cost_obs</code> 避障；<code class="inline">length</code> 直线最短。</p>
+    <h4>近终点轨迹缩短（jnp.where）</h4>
+    <pre># compute_warm_traj 和 compute_traj_guess 里
+remaining = arc_vec[-1] - arc_point         # 剩余路径弧长
+look_ahead = v_des·t_fin·0.5                # 正常前瞻 1.875m
+look_ahead = jnp.where(remaining < look_ahead·2,
+                       remaining·0.5, look_ahead)  # 近目标缩短一半
+# 效果：轨迹随接近平滑缩短 → 没空间弧 → 近终点更直</pre>
+    <div class="callout danger"><strong>关键坑</strong>：这两个函数带 <code class="inline">@partial(jit)</code>。里面不能用 Python <code class="inline">if</code>（对 traced 值），否则 JAX 报错 → 桥卡死不发布。必须用 <code class="inline">jnp.where</code>。</div>
+  </div>
+
+  <!-- ============ 附录 ============ -->
+  <h2 id="tuning">调参记录</h2>
+  <p>从论文到能跑通的完整调参旅程（按时间）：</p>
+  <table>
+    <tr><th>参数</th><th>变化</th><th>现象 / 原因</th></tr>
+    <tr><td><code>num_sample</code></td><td>6 → 20 → 用位移</td><td>太小输出取前段平均速度横移弱</td></tr>
+    <tr><td><code>t_fin</code></td><td>10 → 1.5</td><td>长时间域轨迹填满 25m 大绕弯</td></tr>
+    <tr><td><code>a_obs/b_obs</code></td><td>0.58 → 2.5 → 1.0</td><td>2.5 投影推 2.5m 侧绕→CEM 选穿障碍；1.0 平衡</td></tr>
+    <tr><td><code>cost_obs 权重</code></td><td>1.0 → 5.0 → 12.0</td><td>加强避障</td></tr>
+    <tr><td><code>cost_length</code></td><td>新增 2.0</td><td>惩罚路径长度抑制弧线</td></tr>
+    <tr><td><code>移除 clearance_cost</code></td><td>—</td><td>原式符号反了奖励靠近障碍</td></tr>
+    <tr><td><code>v_des 传参</code></td><td>硬编码 0.5 → 参数 2.5</td><td>前瞻从 0.75m 提到 3.75m，速度解锁</td></tr>
+    <tr><td><code>终点前瞻</code></td><td>v_des·t_fin → ×0.5</td><td>局部轨迹更贴全局路径</td></tr>
+    <tr><td><code>近终点缩短</code></td><td>新增</td><td>轨迹随接近缩短，控制近终点弧度</td></tr>
+    <tr><td><code>control_frequency</code></td><td>5 → 15 Hz</td><td>计算 ~82ms 支持 ~12Hz，提高响应</td></tr>
+    <tr><td><code>路径未就绪停车</code></td><td>新增</td><td>避免第一下直冲全局目标</td></tr>
+  </table>
+
+  <h2 id="lessons">踩坑清单</h2>
+  <div class="file-card">
+    <table>
+      <tr><th>坑</th><th>表现</th><th>解决</th></tr>
+      <tr><td>gpu_lidar 近场量程</td><td>0.4m 内 0 个点，贴着墙也测不到</td><td>配置 min=0.1 无效（近裁剪面 ~0.4m）；避障必须在可见范围介入</td></tr>
+      <tr><td>a_obs=2.5 穿障碍</td><td>正前方障碍永远避不开，改代价权重没用</td><td>是投影推太远导致 CEM 局部最优；a_obs=1.0</td></tr>
+      <tr><td>jitted 函数用 Python if</td><td>桥卡死 65% CPU 不发布</td><td>用 jnp.where</td></tr>
+      <tr><td>TF 动态取出生点</td><td>缓存时机不稳，回退目标错误</td><td>硬编码补给点</td></tr>
+      <tr><td>xterm 不存在</td><td>键盘节点起不来</td><td>改 gnome-terminal</td></tr>
+      <tr><td>残留进程抢 DDS 端口</td><td>TF 时有时无、map 显示不了</td><td>cleanup_bt.sh 全清 + rm /dev/shm/fastrtps_*</td></tr>
+      <tr><td>Groot2 连不上 v3 树</td><td>一直重连</td><td>PublisherZMQ 是给老 Groot 的；Groot2 用 Groot2Publisher（v4），用老 Groot v1 或原生编译版</td></tr>
+    </table>
+  </div>
+</main>
+</div>

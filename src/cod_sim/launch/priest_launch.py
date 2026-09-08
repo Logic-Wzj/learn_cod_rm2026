@@ -133,7 +133,7 @@ def generate_launch_description():
             'odom_topic': 'odometry',
             'cmd_vel_topic': '/priest_cmd',
             'v_max': v_max,
-            'control_frequency': 5.0,
+            'control_frequency': 15.0,
             'weight_track': 5.0,
             'obs_range': 15.0,
         }],

@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <sstream>
 
+#include "geometry_msgs/msg/pose_array.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
 namespace cod_decision_bt
@@ -13,6 +14,26 @@ PatrolNextWaypointAction::PatrolNextWaypointAction(
 : BT::SyncActionNode(name, conf)
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+
+  // 订阅 Publish Point 收集器的实时巡航点（transient_local，晚到也能拿到已收集的点）
+  std::string live_topic = "/patrol_waypoints";
+  getInput("patrol_waypoints_topic", live_topic);
+  auto latched_qos = rclcpp::QoS(10).transient_local();
+  live_sub_ = node_->create_subscription<geometry_msgs::msg::PoseArray>(
+    live_topic, latched_qos,
+    std::bind(&PatrolNextWaypointAction::live_waypoints_cb, this, std::placeholders::_1));
+}
+
+void PatrolNextWaypointAction::live_waypoints_cb(
+  const geometry_msgs::msg::PoseArray::SharedPtr msg)
+{
+  // 收到过列表（哪怕空）就切到 live 模式：用现场点的点巡航，忽略 XML 里的静态点
+  live_mode_ = true;
+  live_points_.clear();
+  for (const auto & p : msg->poses) {
+    live_points_.emplace_back(p.position.x, p.position.y);
+  }
+  warned_empty_ = false;
 }
 
 void PatrolNextWaypointAction::parse_waypoints(const std::string & s)
@@ -67,26 +88,47 @@ BT::NodeStatus PatrolNextWaypointAction::tick()
   getInput("waypoints", waypoints_str);
   getInput("frame_id", frame_id);
 
-  if (waypoints_.empty()) {
-    parse_waypoints(waypoints_str);
-  }
-  if (waypoints_.empty()) {
-    RCLCPP_WARN(node_->get_logger(), "[PatrolNextWaypoint] 没有有效的巡航点");
-    return BT::NodeStatus::FAILURE;
-  }
+  double gx = 0.0;
+  double gy = 0.0;
 
-  auto [wx, wy] = waypoints_[waypoint_index_];
-  waypoint_index_ = (waypoint_index_ + 1) % waypoints_.size();
-
-  double gx = wx;
-  double gy = wy;
-
-  if (use_spawn_pose) {
-    if (!lookup_spawn()) {
+  if (live_mode_) {
+    // 现场 Publish Point 收集的点（map 绝对系）：优先巡航它们
+    if (live_points_.empty()) {
+      if (!warned_empty_) {
+        RCLCPP_WARN(
+          node_->get_logger(),
+          "[PatrolNextWaypoint] 收集器在线但还没有点：在 RViz 里用 Publish Point 点巡航点");
+        warned_empty_ = true;
+      }
       return BT::NodeStatus::FAILURE;
     }
-    gx = spawn_x_ + wx;
-    gy = spawn_y_ + wy;
+    auto [wx, wy] = live_points_[live_index_ % live_points_.size()];
+    live_index_ = (live_index_ + 1) % live_points_.size();
+    gx = wx;
+    gy = wy;
+  } else {
+    // 静态 XML 巡航点（sim/无收集器时回退）
+    if (waypoints_.empty()) {
+      parse_waypoints(waypoints_str);
+    }
+    if (waypoints_.empty()) {
+      RCLCPP_WARN(node_->get_logger(), "[PatrolNextWaypoint] 没有有效的巡航点");
+      return BT::NodeStatus::FAILURE;
+    }
+
+    auto [wx, wy] = waypoints_[waypoint_index_];
+    waypoint_index_ = (waypoint_index_ + 1) % waypoints_.size();
+
+    gx = wx;
+    gy = wy;
+
+    if (use_spawn_pose) {
+      if (!lookup_spawn()) {
+        return BT::NodeStatus::FAILURE;
+      }
+      gx = spawn_x_ + wx;
+      gy = spawn_y_ + wy;
+    }
   }
 
   geometry_msgs::msg::PoseStamped goal;

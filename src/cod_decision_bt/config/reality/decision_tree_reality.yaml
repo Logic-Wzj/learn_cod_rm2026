@@ -1,0 +1,39 @@
+/**:
+  ros__parameters:
+    # 实车：真实时钟（不是仿真时钟）
+    use_sim_time: false
+
+    # 决策树 XML 由 launch 注入
+    # bt_xml: /path/to/decision_tree.xml
+
+    # BT 插件库（nav2 标准 + 自定义）
+    plugin_libraries:
+    - cod_decision_bt_nodes
+    - nav2_navigate_to_pose_action_bt_node
+
+    # 决策树 tick 周期（ms）
+    bt_loop_duration_ms: 100
+    # action server 超时（ms）—— 实车 bt_navigator 启动可能慢，给大一点
+    server_timeout_ms: 2000
+    wait_for_service_timeout_ms: 2000
+
+    # ================= 决策树可调旋钮（只改这里，XML 里是 ${key} 引用）=================
+    # 血量比例阈值：低于此值切"回补给点"
+    hp_threshold: 0.3
+    # 补给点坐标（map 绝对系）
+    retreat_x: 0.0
+    retreat_y: 0.0
+    # 巡航点相对出生点还是绝对坐标
+    patrol_use_spawn_pose: false
+    # 静态巡航点。今晚场地未知，推荐留空 "" + 起 patrol_collector_node
+    # 在 RViz 用 Publish Point 现场点巡航点（有收集器时点优先于这里）。
+    patrol_waypoints: ""
+    # 目标坐标系
+    goal_frame: map
+    # 停车指令发到哪个 cmd_vel（实车带 namespace）
+    stop_cmd_vel_topic: /red_standard_robot1/cmd_vel
+    # bt_navigator 的 NavigateToPose action（实车带 namespace）
+    navigate_server_name: /red_standard_robot1/navigate_to_pose
+    # 裁判消息话题（若今晚接真实裁判 / fzsd 驱动，改这里 + 类型对齐）
+    game_status_topic: /referee/game_status
+    robot_status_topic: /referee/robot_status

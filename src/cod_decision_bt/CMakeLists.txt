@@ -23,6 +23,11 @@ ament_auto_add_executable(decision_tree_node
   src/decision_tree_node.cpp
 )
 
+# Publish Point 巡航点收集器（RViz 点一点收一个，喂给 PatrolNextWaypoint）
+ament_auto_add_executable(patrol_collector_node
+  src/patrol_collector_node.cpp
+)
+
 install(DIRECTORY behavior_trees config launch
   DESTINATION share/${PROJECT_NAME}
 )

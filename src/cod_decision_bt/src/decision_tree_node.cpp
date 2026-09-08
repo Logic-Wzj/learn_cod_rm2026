@@ -28,6 +28,20 @@ public:
     declare_parameter<int>("server_timeout_ms", 1000);
     declare_parameter<int>("wait_for_service_timeout_ms", 1000);
 
+    // ===== 全部可调旋钮（集中在一份 params 文件里改，XML 通过 ${key} 引用）=====
+    declare_parameter<double>("hp_threshold", 0.3);
+    declare_parameter<double>("retreat_x", 0.2);
+    declare_parameter<double>("retreat_y", 0.3);
+    declare_parameter<bool>("patrol_use_spawn_pose", false);
+    declare_parameter<std::string>(
+      "patrol_waypoints",
+      "5.2,0.0; 4.3,-6.3; 9.8,-6.5; 9.9,-0.5; -0.2,-6.1; 0.2,0.3");
+    declare_parameter<std::string>("goal_frame", "map");
+    declare_parameter<std::string>("stop_cmd_vel_topic", "/cmd_vel");
+    declare_parameter<std::string>("navigate_server_name", "/navigate_to_pose");
+    declare_parameter<std::string>("game_status_topic", "/referee/game_status");
+    declare_parameter<std::string>("robot_status_topic", "/referee/robot_status");
+
     bt_xml_ = get_parameter("bt_xml").as_string();
     plugin_libraries_ = get_parameter("plugin_libraries").as_string_array();
     bt_loop_duration_ = std::chrono::milliseconds(get_parameter("bt_loop_duration_ms").as_int());
@@ -64,6 +78,24 @@ private:
         "wait_for_service_timeout", wait_for_service_timeout_);
       blackboard_->set<geometry_msgs::msg::PoseStamped>(
         "goal", geometry_msgs::msg::PoseStamped());
+
+      // 旋钮参数注入黑板：XML 里用 ${hp_threshold} 这类写法引用
+      blackboard_->set<double>("hp_threshold", get_parameter("hp_threshold").as_double());
+      blackboard_->set<double>("retreat_x", get_parameter("retreat_x").as_double());
+      blackboard_->set<double>("retreat_y", get_parameter("retreat_y").as_double());
+      blackboard_->set<bool>(
+        "patrol_use_spawn_pose", get_parameter("patrol_use_spawn_pose").as_bool());
+      blackboard_->set<std::string>(
+        "patrol_waypoints", get_parameter("patrol_waypoints").as_string());
+      blackboard_->set<std::string>("goal_frame", get_parameter("goal_frame").as_string());
+      blackboard_->set<std::string>(
+        "stop_cmd_vel_topic", get_parameter("stop_cmd_vel_topic").as_string());
+      blackboard_->set<std::string>(
+        "navigate_server_name", get_parameter("navigate_server_name").as_string());
+      blackboard_->set<std::string>(
+        "game_status_topic", get_parameter("game_status_topic").as_string());
+      blackboard_->set<std::string>(
+        "robot_status_topic", get_parameter("robot_status_topic").as_string());
 
       tree_ = std::make_unique<BT::Tree>(bt_engine_->createTreeFromFile(bt_xml_, blackboard_));
       tree_created_ = true;

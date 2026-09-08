@@ -13,3 +13,25 @@
     # action server 超时（ms）
     server_timeout_ms: 1000
     wait_for_service_timeout_ms: 1000
+
+    # ================= 决策树可调旋钮（只改这里，XML 里是 ${key} 引用）=================
+    # 血量比例阈值：低于此值切"回补给点"
+    hp_threshold: 0.3
+    # 补给点坐标（map 绝对系）
+    retreat_x: 0.2
+    retreat_y: 0.3
+    # 巡航点相对出生点还是绝对坐标
+    patrol_use_spawn_pose: false
+    # 静态巡航点（分号分隔 "x,y; x,y; ..."）。
+    # 注意：起了 patrol_collector_node 用 RViz 点巡航点时，这里会被忽略（用点的）。
+    # 留空 "" = 没收集器时巡航分支不动作，等现场点。
+    patrol_waypoints: "5.2,0.0; 4.3,-6.3; 9.8,-6.5; 9.9,-0.5; -0.2,-6.1; 0.2,0.3"
+    # 目标坐标系
+    goal_frame: map
+    # 停车指令发到哪个 cmd_vel（实车是带 namespace 的话题）
+    stop_cmd_vel_topic: /cmd_vel
+    # bt_navigator 的 NavigateToPose action（实车带 namespace）
+    navigate_server_name: /navigate_to_pose
+    # 裁判消息话题
+    game_status_topic: /referee/game_status
+    robot_status_topic: /referee/robot_status
