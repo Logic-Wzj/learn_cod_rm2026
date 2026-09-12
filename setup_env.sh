@@ -24,6 +24,7 @@ echo "== 安装系统依赖 =="
 APT_PKGS="python3-pip python3-yaml libeigen3-dev libpcl-dev \
     ros-humble-ros-gz-sim ros-humble-ros-gz-bridge ros-humble-ros-gz-interfaces \
     ros-humble-nav2-bringup ros-humble-slam-toolbox \
+    ros-humble-robot-state-publisher ros-humble-xacro ros-humble-joint-state-publisher \
     ros-humble-ament-cmake-clang-tidy"
 
 # Gazebo Fortress 已存在就跳过（不同版本是不同 apt 包，这里只判断 Fortress=ign gazebo）
