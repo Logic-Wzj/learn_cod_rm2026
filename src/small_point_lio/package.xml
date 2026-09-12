@@ -19,6 +19,9 @@
   <depend>tf2_ros</depend>
   <depend>tf2_geometry_msgs</depend>
   <depend>std_srvs</depend>
+  <!-- 注意：livox_ros_driver2 已 vendored 在 src/fzsd_vendor/livox_ros_driver2，
+       所以这里声明是安全的（rosdep 的 ignore-src 会跳过本地包），并保证先编它、
+       让 small_point_lio 自动启用 Livox (CustomMsg) 支持。 -->
   <depend>livox_ros_driver2</depend>
 
   <test_depend>ament_lint_auto</test_depend>

@@ -6,3 +6,15 @@ install/
 .claude/
 __pycache__/
 *.pyc
+
+# 大的二进制/数据文件，防止误提交（仿真地图/点云/镜像包等）
+*.pcd
+*.bag
+*.tar.gz
+*.zip
+*.tar
+
+# colcon 产物（任意层级）
+**/build/
+**/install/
+**/log/

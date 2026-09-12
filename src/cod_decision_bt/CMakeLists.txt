@@ -32,6 +32,4 @@ install(DIRECTORY behavior_trees config launch
   DESTINATION share/${PROJECT_NAME}
 )
 
-ament_auto_package(
-  USE_SCOPED_HEADER_INSTALL_DIR
-)
+ament_auto_package()
