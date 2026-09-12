@@ -40,6 +40,10 @@ ros2 launch cod_sim rm_decision_launch.py     # 仿真 + 裁判 + 决策树
 | `fzsd2025_robot_description/` | 机器人 SDF/xmacro 模型 + mesh | spawn 用 |
 | `pb2025_nav_bringup/` | **只保留 `map/`**（testslam 仿真地图） | 已去掉 2G 的 `pcd/` |
 | `livox_ros_driver2/` | livox 雷达驱动 + 自带 **Livox-SDK2**（含 amd64/arm64 预编译库） | 无需外装 SDK；`small_point_lio` 会自动启用 Livox 支持 |
+| `nav2_command_handler/` | 命令处理节点（rmu 依赖） | 小，随包带上 |
+| `vision_interfaces/` | 视觉消息接口（rmu 依赖） | 小，随包带上 |
+
+> 注：vendored 的 `pb2025_nav_bringup` 只用于它的 `map/`，其 package.xml 里**实车专用**依赖（point_lio / terrain_analysis / small_gicp_relocalization / pb_teleop_twist_joy / pb2025_sentry_nav）已裁剪，避免 rosdep 报未解析；它的实车 launch 本仓库不跑。
 
 - 这些是从 **fzsd2025** 工程拷来的（非本团队原创），只为让仿真自足。
 - **刷新方式**（上游更新时）：

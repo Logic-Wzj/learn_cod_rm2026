@@ -21,14 +21,21 @@ echo "ROS_DISTRO=$ROS_DISTRO"
 
 # --- 1. 系统依赖 ---
 echo "== 安装系统依赖 =="
-sudo apt update
-sudo apt install -y \
-    python3-pip \
-    libeigen3-dev libpcl-dev \
-    ignition-fortress \
+APT_PKGS="python3-pip python3-yaml libeigen3-dev libpcl-dev \
     ros-humble-ros-gz-sim ros-humble-ros-gz-bridge ros-humble-ros-gz-interfaces \
     ros-humble-nav2-bringup ros-humble-slam-toolbox \
-    ros-humble-ament-cmake-clang-tidy
+    ros-humble-ament-cmake-clang-tidy"
+
+# Gazebo Fortress 已存在就跳过（不同版本是不同 apt 包，这里只判断 Fortress=ign gazebo）
+if command -v ign >/dev/null 2>&1 && ign gazebo --version >/dev/null 2>&1; then
+  echo "   检测到 ignition gazebo(Fortress) 已安装，跳过 ignition-fortress"
+else
+  APT_PKGS="$APT_PKGS ignition-fortress"
+fi
+
+sudo apt update
+# shellcheck disable=SC2086
+sudo apt install -y $APT_PKGS
 
 # --- 2. pip 依赖（仿真 launch 需要 xmacro）---
 echo "== 安装 python 依赖 =="
