@@ -21,11 +21,20 @@ echo "ROS_DISTRO=$ROS_DISTRO"
 
 # --- 1. 系统依赖 ---
 echo "== 安装系统依赖 =="
-APT_PKGS="python3-pip python3-yaml libeigen3-dev libpcl-dev \
+APT_PKGS="git build-essential cmake curl \
+    python3-pip python3-yaml python3-rosdep python3-colcon-common-extensions \
+    libeigen3-dev libpcl-dev \
+    ros-humble-navigation2 ros-humble-nav2-bringup \
     ros-humble-ros-gz-sim ros-humble-ros-gz-bridge ros-humble-ros-gz-interfaces \
-    ros-humble-nav2-bringup ros-humble-slam-toolbox \
     ros-humble-robot-state-publisher ros-humble-xacro ros-humble-joint-state-publisher \
-    ros-humble-ament-cmake-clang-tidy"
+    ros-humble-rosidl-default-generators ros-humble-rosidl-default-runtime \
+    ros-humble-slam-toolbox ros-humble-rviz2 ros-humble-tf2-tools \
+    ros-humble-pluginlib ros-humble-behaviortree-cpp-v3 ros-humble-message-filters \
+    ros-humble-laser-geometry ros-humble-pcl-conversions ros-humble-pcl-ros \
+    ros-humble-interactive-markers ros-humble-visualization-msgs ros-humble-std-srvs \
+    ros-humble-nav-msgs ros-humble-tf2 ros-humble-tf2-ros ros-humble-tf2-geometry-msgs \
+    ros-humble-tf2-sensor-msgs ros-humble-launch ros-humble-launch-ros \
+    ros-humble-ament-index-python ros-humble-ament-cmake-auto ros-humble-ament-cmake-clang-tidy"
 
 # Gazebo Fortress 已存在就跳过（不同版本是不同 apt 包，这里只判断 Fortress=ign gazebo）
 if command -v ign >/dev/null 2>&1 && ign gazebo --version >/dev/null 2>&1; then
